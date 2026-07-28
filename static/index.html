@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KNOWLEDGE // INTEGRATION</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<!-- ===== AUTH SCREEN ===== -->
+<section id="auth-screen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-card__scan" aria-hidden="true"></div>
+    <h1 class="auth-title">
+      <span class="auth-title__bracket">[</span>KNOWLEDGE INTEGRATION<span class="auth-title__bracket">]</span>
+    </h1>
+    <p class="auth-sub" id="auth-sub">MASTER PASSWORD AUTHENTICATION REQUIRED</p>
+
+    <form id="auth-form" autocomplete="off">
+      <label class="field">
+        <span class="field__label">MASTER PASSWORD</span>
+        <input type="password" id="auth-password" class="field__input" placeholder="••••••••••••" required minlength="8" />
+      </label>
+      <label class="field" id="auth-confirm-field" hidden>
+        <span class="field__label">CONFIRM PASSWORD</span>
+        <input type="password" id="auth-password-confirm" class="field__input" placeholder="••••••••••••" minlength="8" />
+      </label>
+      <button type="submit" class="btn btn--primary btn--block" id="auth-submit">
+        <span>LOGIN</span>
+      </button>
+      <p class="auth-error" id="auth-error" hidden></p>
+    </form>
+  </div>
+</section>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app" class="app" hidden>
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__brand-icon">◈</span>
+      <span class="topbar__brand-text">KNOWLEDGE<span class="accent">::</span>INTEGRATION</span>
+    </div>
+    <div class="topbar__search">
+      <input type="search" id="search-input" class="topbar__search-input" placeholder="全文検索... (タイトル / 本文 / タグ)" />
+    </div>
+    <div class="topbar__actions">
+      <button class="btn btn--ghost" id="new-entry-btn">＋ NEW ENTRY</button>
+      <button class="btn btn--ghost btn--icon" id="logout-btn" title="ログアウト">⏻</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar__section">
+        <h2 class="sidebar__title">TYPE</h2>
+        <div class="filter-list" id="type-filters">
+          <button class="filter-chip is-active" data-type="">ALL</button>
+          <button class="filter-chip" data-type="manual">📘 MANUAL</button>
+          <button class="filter-chip" data-type="credential">🔑 CREDENTIAL</button>
+        </div>
+      </div>
+      <div class="sidebar__section">
+        <h2 class="sidebar__title">TAGS</h2>
+        <div class="tag-cloud" id="tag-cloud">
+          <p class="muted">タグはまだありません</p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="content__header">
+        <h2 class="content__title" id="list-title">ALL ENTRIES</h2>
+        <span class="content__count" id="list-count"></span>
+      </div>
+      <div class="entry-list" id="entry-list">
+        <p class="muted">読み込み中...</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===== ENTRY DETAIL MODAL ===== -->
+<div class="modal-overlay" id="detail-modal" hidden>
+  <div class="modal modal--detail">
+    <button class="modal__close" data-close-detail>✕</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- ===== ENTRY EDIT MODAL ===== -->
+<div class="modal-overlay" id="edit-modal" hidden>
+  <div class="modal modal--edit">
+    <button class="modal__close" data-close-edit>✕</button>
+    <h2 class="modal__title" id="edit-modal-title">NEW ENTRY</h2>
+    <form id="edit-form">
+      <input type="hidden" id="edit-id" />
+      <div class="type-toggle" id="edit-type-toggle">
+        <button type="button" class="type-toggle__opt is-active" data-type="manual">📘 MANUAL</button>
+        <button type="button" class="type-toggle__opt" data-type="credential">🔑 CREDENTIAL</button>
+      </div>
+      <label class="field">
+        <span class="field__label">TITLE</span>
+        <input type="text" id="edit-title" class="field__input" required maxlength="200" />
+      </label>
+      <label class="field">
+        <span class="field__label" id="edit-body-label">BODY</span>
+        <textarea id="edit-body" class="field__input field__input--textarea" rows="8"></textarea>
+      </label>
+      <label class="field">
+        <span class="field__label">TAGS (カンマ区切り)</span>
+        <input type="text" id="edit-tags" class="field__input" placeholder="例: ネットワーク, ルーター" />
+      </label>
+
+      <div class="suggest-box" id="suggest-box" hidden>
+        <h3 class="suggest-box__title">🔗 関連しそうな既存エントリ</h3>
+        <div class="suggest-list" id="suggest-list"></div>
+      </div>
+
+      <div class="link-box" id="link-box" hidden>
+        <h3 class="link-box__title">現在のリンク</h3>
+        <div class="link-list" id="current-link-list"></div>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn--danger" id="delete-entry-btn" hidden>削除</button>
+        <div class="modal__footer-right">
+          <button type="button" class="btn btn--ghost" data-close-edit>キャンセル</button>
+          <button type="submit" class="btn btn--primary">保存</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
