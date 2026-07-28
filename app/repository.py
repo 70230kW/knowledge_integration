@@ -4,7 +4,17 @@ from datetime import datetime, timezone
 
 from cryptography.fernet import Fernet
 
-from app.schemas import EntryIn, EntryListItem, EntryOut, LinkedEntryOut, SuggestionItem, SuggestionRequest, TagOut
+from app.schemas import (
+    BulkEntryItem,
+    EntryIn,
+    EntryListItem,
+    EntryOut,
+    EntryType,
+    LinkedEntryOut,
+    SuggestionItem,
+    SuggestionRequest,
+    TagOut,
+)
 
 _TAG_SEP = ""
 _KEYWORD_SPLIT_RE = re.compile(
@@ -107,6 +117,15 @@ def create_entry(conn: sqlite3.Connection, entry: EntryIn, fernet: Fernet) -> in
     tag_names = _set_entry_tags(conn, entry_id, entry.tags)
     _fts_upsert(conn, entry_id, entry.title, _body_for_index(entry.type, entry.body), " ".join(tag_names))
     return entry_id
+
+
+def bulk_create_entries(
+    conn: sqlite3.Connection, entry_type: EntryType, items: list[BulkEntryItem], fernet: Fernet
+) -> list[int]:
+    return [
+        create_entry(conn, EntryIn(title=item.title, body=item.body, type=entry_type, tags=item.tags), fernet)
+        for item in items
+    ]
 
 
 def update_entry(conn: sqlite3.Connection, entry_id: int, entry: EntryIn, fernet: Fernet) -> bool:
