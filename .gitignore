@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+data/*.db
+data/*.db-journal
+data/salt.bin
+data/verify.token
+!data/.gitkeep
+.pytest_cache/
+*.egg-info/
