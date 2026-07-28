@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app import repository as repo
 from app.deps import get_db, require_auth
 from app.schemas import (
+    BulkImportRequest,
+    BulkImportResult,
     EntryIn,
     EntryListItem,
     EntryOut,
@@ -76,6 +78,16 @@ def delete_entry(
     deleted = repo.delete_entry(conn, entry_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="エントリが見つかりません。")
+
+
+@router.post("/bulk", response_model=BulkImportResult, status_code=status.HTTP_201_CREATED)
+def bulk_create_entries(
+    payload: BulkImportRequest,
+    conn: sqlite3.Connection = Depends(get_db),
+    fernet: Fernet = Depends(require_auth),
+) -> BulkImportResult:
+    ids = repo.bulk_create_entries(conn, payload.type, payload.items, fernet)
+    return BulkImportResult(created_count=len(ids), ids=ids)
 
 
 @router.post("/suggestions", response_model=list[SuggestionItem])

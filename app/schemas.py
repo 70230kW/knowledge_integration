@@ -72,3 +72,19 @@ class SuggestionItem(BaseModel):
     matched_tags: list[str]
     matched_keywords: list[str]
     score: float
+
+
+class BulkEntryItem(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    body: str = ""
+    tags: list[str] = []
+
+
+class BulkImportRequest(BaseModel):
+    type: EntryType
+    items: list[BulkEntryItem] = Field(min_length=1, max_length=200)
+
+
+class BulkImportResult(BaseModel):
+    created_count: int
+    ids: list[int]

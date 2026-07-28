@@ -122,6 +122,17 @@ const el = {
   linkBox: document.getElementById("link-box"),
   currentLinkList: document.getElementById("current-link-list"),
   deleteEntryBtn: document.getElementById("delete-entry-btn"),
+
+  bulkImportBtn: document.getElementById("bulk-import-btn"),
+  bulkModal: document.getElementById("bulk-modal"),
+  bulkForm: document.getElementById("bulk-form"),
+  bulkTypeToggle: document.getElementById("bulk-type-toggle"),
+  bulkText: document.getElementById("bulk-text"),
+  bulkPreview: document.getElementById("bulk-preview"),
+  bulkPreviewTitle: document.getElementById("bulk-preview-title"),
+  bulkPreviewList: document.getElementById("bulk-preview-list"),
+  bulkStatus: document.getElementById("bulk-status"),
+  bulkSubmitBtn: document.getElementById("bulk-submit-btn"),
 };
 
 /* ===================== Auth ===================== */
@@ -536,6 +547,133 @@ el.deleteEntryBtn.addEventListener("click", async () => {
   await api.del(`/api/entries/${state.editingEntryId}`);
   closeEdit();
   await Promise.all([loadEntries(), loadTags()]);
+});
+
+/* ===================== Bulk import ===================== */
+function parseBulkText(raw) {
+  const blocks = raw.split(/^[ \t]*---[ \t]*$/m);
+  const items = [];
+  const errors = [];
+
+  blocks.forEach((block, idx) => {
+    const lines = block.split("\n");
+    while (lines.length && lines[0].trim() === "") lines.shift();
+    while (lines.length && lines[lines.length - 1].trim() === "") lines.pop();
+    if (lines.length === 0) return;
+
+    const title = lines[0].trim();
+    if (!title) {
+      errors.push({ block: idx + 1, message: "タイトルが空です（スキップされます）" });
+      return;
+    }
+
+    let tags = [];
+    const bodyLines = [];
+    for (let i = 1; i < lines.length; i++) {
+      const m = lines[i].match(/^\s*tags?\s*[:：]\s*(.*)$/i);
+      if (m) {
+        tags = m[1]
+          .split(/[,、]/)
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
+      } else {
+        bodyLines.push(lines[i]);
+      }
+    }
+    items.push({ title, body: bodyLines.join("\n").trim(), tags });
+  });
+
+  return { items, errors };
+}
+
+function bulkCurrentType() {
+  return el.bulkTypeToggle.querySelector(".is-active").dataset.type;
+}
+
+function resetBulkForm() {
+  el.bulkForm.reset();
+  [...el.bulkTypeToggle.children].forEach((c) => c.classList.toggle("is-active", c.dataset.type === "credential"));
+  el.bulkPreview.hidden = true;
+  el.bulkPreviewList.innerHTML = "";
+  el.bulkStatus.textContent = "";
+  el.bulkSubmitBtn.disabled = true;
+}
+
+function openBulkModal() {
+  resetBulkForm();
+  el.bulkModal.hidden = false;
+  el.bulkText.focus();
+}
+
+function closeBulkModal() {
+  el.bulkModal.hidden = true;
+  resetBulkForm();
+}
+
+el.bulkImportBtn.addEventListener("click", openBulkModal);
+document.querySelectorAll("[data-close-bulk]").forEach((b) => b.addEventListener("click", closeBulkModal));
+el.bulkModal.addEventListener("click", (e) => {
+  if (e.target === el.bulkModal) closeBulkModal();
+});
+
+el.bulkTypeToggle.addEventListener("click", (e) => {
+  const btn = e.target.closest(".type-toggle__opt");
+  if (!btn) return;
+  [...el.bulkTypeToggle.children].forEach((c) => c.classList.toggle("is-active", c === btn));
+});
+
+function renderBulkPreview() {
+  const { items, errors } = parseBulkText(el.bulkText.value);
+  if (items.length === 0 && errors.length === 0) {
+    el.bulkPreview.hidden = true;
+    el.bulkSubmitBtn.disabled = true;
+    return { items, errors };
+  }
+
+  el.bulkPreview.hidden = false;
+  el.bulkPreviewTitle.textContent = `解析結果: ${items.length}件登録可能${errors.length ? ` / ${errors.length}件エラー` : ""}`;
+
+  const itemRows = items
+    .map(
+      (it) => `
+      <div class="bulk-preview-item">
+        <span>${escapeHtml(it.title)}</span>
+        <span class="bulk-preview-item__meta">${it.tags.length ? escapeHtml(it.tags.join(", ")) : "タグなし"}</span>
+      </div>`
+    )
+    .join("");
+  const errorRows = errors
+    .map(
+      (e) => `
+      <div class="bulk-preview-item bulk-preview-item--error">
+        <span>ブロック${e.block}</span>
+        <span class="bulk-preview-item__meta">${escapeHtml(e.message)}</span>
+      </div>`
+    )
+    .join("");
+  el.bulkPreviewList.innerHTML = itemRows + errorRows;
+  el.bulkSubmitBtn.disabled = items.length === 0;
+  return { items, errors };
+}
+
+el.bulkText.addEventListener("input", debounce(renderBulkPreview, 200));
+
+el.bulkForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const { items } = renderBulkPreview();
+  if (items.length === 0) return;
+
+  el.bulkSubmitBtn.disabled = true;
+  el.bulkStatus.textContent = "登録中...";
+  try {
+    const result = await api.post("/api/entries/bulk", { type: bulkCurrentType(), items });
+    el.bulkStatus.textContent = `${result.created_count}件登録しました`;
+    await Promise.all([loadEntries(), loadTags()]);
+    setTimeout(closeBulkModal, 800);
+  } catch (err) {
+    el.bulkStatus.textContent = err.message;
+    el.bulkSubmitBtn.disabled = false;
+  }
 });
 
 /* ===================== Boot ===================== */

@@ -50,6 +50,7 @@
     </div>
     <div class="topbar__actions">
       <button class="btn btn--ghost" id="new-entry-btn">＋ NEW ENTRY</button>
+      <button class="btn btn--ghost" id="bulk-import-btn">📥 BULK IMPORT</button>
       <button class="btn btn--ghost btn--icon" id="logout-btn" title="ログアウト">⏻</button>
     </div>
   </header>
@@ -131,6 +132,52 @@
         <div class="modal__footer-right">
           <button type="button" class="btn btn--ghost" data-close-edit>キャンセル</button>
           <button type="submit" class="btn btn--primary">保存</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== BULK IMPORT MODAL ===== -->
+<div class="modal-overlay" id="bulk-modal" hidden>
+  <div class="modal modal--edit">
+    <button class="modal__close" data-close-bulk>✕</button>
+    <h2 class="modal__title">BULK IMPORT</h2>
+    <form id="bulk-form">
+      <div class="type-toggle" id="bulk-type-toggle">
+        <button type="button" class="type-toggle__opt" data-type="manual">📘 MANUAL</button>
+        <button type="button" class="type-toggle__opt is-active" data-type="credential">🔑 CREDENTIAL</button>
+      </div>
+
+      <div class="bulk-help">
+        各エントリは <code>---</code> のみの行で区切ります。1行目がタイトル、
+        <code>tags:</code> で始まる行はカンマ区切りのタグ、残りの行が本文になります。
+        <pre class="bulk-help__example">自宅Wi-Fi
+tags: ネットワーク
+SSID: home-network
+password: hunter2
+---
+社内VPN
+tags: 仕事, VPN
+ID: employee01
+PW: abc123</pre>
+      </div>
+
+      <label class="field">
+        <span class="field__label">ENTRIES</span>
+        <textarea id="bulk-text" class="field__input field__input--textarea" rows="12" placeholder="ここに複数エントリを貼り付け..."></textarea>
+      </label>
+
+      <div class="bulk-preview" id="bulk-preview" hidden>
+        <h3 class="bulk-preview__title" id="bulk-preview-title">解析結果</h3>
+        <div class="bulk-preview-list" id="bulk-preview-list"></div>
+      </div>
+
+      <div class="modal__footer">
+        <span class="muted" id="bulk-status"></span>
+        <div class="modal__footer-right">
+          <button type="button" class="btn btn--ghost" data-close-bulk>キャンセル</button>
+          <button type="submit" class="btn btn--primary" id="bulk-submit-btn" disabled>一括登録する</button>
         </div>
       </div>
     </form>
